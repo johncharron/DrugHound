@@ -1,0 +1,41 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+venv/
+env/
+.env
+.env.local
+.env.*.local
+
+# Secrets - NEVER COMMIT
+*.key
+*.pem
+*_key.py
+secrets/
+
+# Output files
+output/*.csv
+output/*.json
+output/*.txt
+logs/*.log
+
+# Checkpoints
+*.checkpoint
+checkpoint.json
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS
+.DS_Store
+Thumbs.db
+
+# Testing
+.pytest_cache/
+.coverage
+htmlcov/
