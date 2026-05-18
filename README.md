@@ -1,152 +1,149 @@
-# 🐕 DrugHound
+# 🐕 DrugHound Enterprise
 
-**DrugHound** is an AI-powered drug repurposing discovery engine that identifies understudied drugs with high potential for new therapeutic applications.
+**AI-Powered Drug Repurposing Discovery Platform**
 
-[![Python Version](https://img.shields.io/badge/python-3.11+-blue.svg)](https://python.org)
-[![License](https://img.shields.io/badge/license-MIT-green.svg)](LICENSE)
-[![Ollama](https://img.shields.io/badge/ollama-qwen2.5--coder-orange.svg)](https://ollama.ai)
+DrugHound Enterprise mines live clinical trial data to identify understudied drugs with high repurposing potential.
 
-## 🎯 What It Does
+## 🌐 Live Demo
 
-DrugHound mines clinical trial data and scientific literature to find **novel drug repurposing opportunities** - existing drugs that could treat different diseases than originally intended.
+[https://drughound.duranic.com](https://drughound.duranic.com)
 
-## 🔍 How It Works
+## ✨ Features
 
-1. Search ClinicalTrials.gov for recent studies
-2. Extract drug names from interventions
-3. Count PubMed publications (fewer = more novel)
-4. Calculate novelty score (0-100)
-5. Generate AI-powered repurposing analysis
+### Current (v3.0)
+- 🔍 **Real-time Drug Discovery** - Extracts drug candidates from ClinicalTrials.gov
+- 📊 **Confidence Scoring** - Novelty + trial-based scoring (0-100%)
+- 🖱️ **Clickable Drug Cards** - Modal popups with detailed information
+- 🔬 **Clinical Trial Links** - Direct URLs to ClinicalTrials.gov
+- 📄 **PubMed Integration** - External search links for publications
+- 🎨 **Modern Dashboard** - Dark theme, responsive design
+- 🌍 **Public HTTPS Access** - Cloudflare Tunnel for global access
 
-## 📊 Latest Results
-
-Top novel drug candidates identified:
-
-| Drug | Novelty Score | Publications | Phase | Primary Condition |
-|------|--------------|--------------|-------|-------------------|
-| PYX-201 | 95 (VERY HIGH) | 6 | Phase 1 | Solid Tumors |
-| AL01211 | 95 (VERY HIGH) | 2 | Phase 2 | Fabry Disease |
-| Epetraborole | 80 (HIGH) | 27 | Phase 2 | Bacterial Infections |
-
-### Repurposing Insights
-
-**AL01211** (2 publications) shows potential for:
-- Renal Diseases (chronic kidney disease)
-- Cardiovascular Disorders
-- Neurological Conditions
-
-**PYX-201** (6 publications) shows potential for:
-- Autoimmune Diseases
-- Neurodegenerative Disorders
-- Infectious Diseases
+### Coming Soon
+- 🤖 **AI Copilot** - Natural language Q&A about drugs
+- 📚 **Real Publication Counts** - Direct PubMed API integration
+- 🕸️ **Knowledge Graph** - Interactive drug-disease network visualization
+- 🧪 **ADMET Prediction** - Toxicity and property predictions
 
 ## 🚀 Quick Start
 
 ### Prerequisites
+- Ubuntu 22.04 (or any Debian-based Linux)
+- Python 3.10+
+- Internet connection for ClinicalTrials.gov API
 
-Install Ollama and pull the model:
+### One-Command Deployment (For Server Administrators)
 
-curl -fsSL https://ollama.com/install.sh | sh
-ollama pull qwen2.5-coder:7b
-text
+`bash
+# Clone the repository
+git clone https://github.com/johncharron/DrugHound.git /opt/drughound
+cd /opt/drughound
 
+# Install dependencies
+pip3 install fastapi uvicorn requests
 
-### Installation
+# Run the application
+python3 app.py
+`
 
-git clone https://github.com/johncharron/DrugHound.git
-cd DrugHound
-python3 -m venv venv
-source venv/bin/activate
-pip install -r requirements.txt
-python src/drughound.py
-text
+### For End Users (No Installation Required)
 
+Simply open your web browser to: **https://drughound.duranic.com**
 
-### Configuration
+No software installation needed - works on any device with a browser!
 
-Copy the environment template and add your PubMed API key:
+## 📡 API Endpoints
 
-cp .env.template .env
-nano .env
-text
+| Endpoint | Method | Description |
+|----------|--------|-------------|
+| `/` or `/dashboard` | GET | Main web interface |
+| `/api/discover?condition=cancer&limit=20` | GET | Discover drugs for a disease |
+| `/api/drug/{drug_name}` | GET | Detailed drug information + trials |
 
+### Example API Response
+
+`json
+{
+  "condition": "cancer",
+  "drugs": [
+    {
+      "name": "LBL-024",
+      "novelty": 95,
+      "confidence": 85,
+      "trials": 5
+    }
+  ]
+}
+`
+
+## 🛠️ Technology Stack
+
+| Component | Technology |
+|-----------|------------|
+| Backend | FastAPI (Python) |
+| Web Server | Uvicorn |
+| API Source | ClinicalTrials.gov |
+| Deployment | Proxmox VM |
+| Reverse Proxy | Cloudflare Tunnel (server-side only) |
+| Process Manager | systemd |
 
 ## 📁 Project Structure
 
-DrugHound/
-├── src/
-│ ├── drughound.py # Main discovery engine
-│ └── config.py # Configuration
-├── analyze_top_drugs.py # LLM repurposing analysis
-├── output/ # Results (CSV, analysis)
-├── requirements.txt # Dependencies
-└── README.md # This file
-text
+`/opt/drughound/
+├── app.py              # Main FastAPI application
+├── requirements.txt    # Python dependencies
+└── README.md          # This file`
 
+## 🔧 Maintenance Commands (Server Admin Only)
 
-## 📊 Output Files
+`bash
+# Check service status
+sudo systemctl status drughound
 
-| File | Description |
-|------|-------------|
-| output/top_novel_drugs.csv | Ranked drugs with novelty scores |
-| output/repurposing_analysis.txt | AI-generated repurposing insights |
+# View logs
+sudo journalctl -u drughound -f
 
-## 🔬 Generating Deep Analysis
+# Restart the service
+sudo systemctl restart drughound
 
-Run the LLM-powered repurposing analysis:
+# Update application
+cd /opt/drughound
+git pull
+sudo systemctl restart drughound
+`
 
-python analyze_top_drugs.py
-text
+## 👥 For End Users
 
+DrugHound is a web application - end users simply need:
 
-## 📚 Data Sources
+1. A web browser (Chrome, Firefox, Safari, Edge)
+2. Internet connection
+3. The URL: **https://drughound.duranic.com**
 
-- ClinicalTrials.gov - U.S. National Library of Medicine
-- PubMed - NCBI/NIH database
-- Ollama - Local LLM (qwen2.5-coder:7b)
-
-## 🧠 Novelty Scoring
-
-Drugs are scored 0-100 based on:
-- Publication count (0-50 pts): Fewer publications = higher score
-- Clinical phase (0-30 pts): Earlier phase = higher score
-- Rarity (0-20 pts): Rare diseases = bonus
-
-| Score | Level | Meaning |
-|-------|-------|---------|
-| 90-100 | VERY HIGH | Understudied, prime repurposing candidate |
-| 70-89 | HIGH | Emerging research opportunity |
-| 50-69 | MODERATE | Some existing research |
-| Below 50 | LOW | Well-studied, less novel |
+**No software installation needed!** Just click and use.
 
 ## 🤝 Contributing
 
-1. Fork the repository
-2. Create a feature branch
-3. Make your changes
-4. Submit a pull request
+Contributions welcome! Please ensure:
+1. Tests pass locally
+2. Code follows existing patterns
+3. API responses remain backward compatible
 
-## ⚖️ Disclaimer
+## 📄 License
 
-DrugHound is a research tool for generating hypotheses. All findings should be:
-- Verified with primary literature
-- Validated through proper scientific methods
-- Reviewed by medical professionals
-
-The AI-generated analyses are for informational purposes only.
-
-## 📝 License
-
-MIT License
+MIT License - See LICENSE file
 
 ## 🙏 Acknowledgments
 
-- ClinicalTrials.gov for open trial data
-- PubMed/NCBI for literature access
-- Ollama for local LLM capabilities
+- ClinicalTrials.gov for the API
+- FastAPI for the web framework
+- Cloudflare for tunneling
+
+## 📞 Support
+
+- GitHub Issues: [https://github.com/johncharron/DrugHound/issues](https://github.com/johncharron/DrugHound/issues)
+- Live Demo: [https://drughound.duranic.com](https://drughound.duranic.com)
 
 ---
 
-Built with 🐕 by John Charron
-
-Star this repository if you find it useful!
+**Built with 🐕 for drug discovery researchers**
