@@ -1,0 +1,219 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DrugHound Enterprise</title>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <script src="https://code.jquery.com/jquery-3.7.1.min.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', sans-serif; background: #0f0f23; color: #e0e0e0; }
+        .container { max-width: 1400px; margin: 0 auto; padding: 20px; }
+        .card { background: #1a1a3e; border-radius: 15px; padding: 25px; margin-bottom: 20px; }
+        .search-box { display: flex; gap: 15px; margin-top: 20px; }
+        .search-input { flex: 1; padding: 15px; background: #2a2a4a; border: 1px solid #3a3a5a; border-radius: 8px; color: white; font-size: 16px; }
+        .btn { background: #00d4ff; color: #0f0f23; padding: 15px 30px; border: none; border-radius: 8px; cursor: pointer; font-weight: bold; font-size: 16px; }
+        .btn:hover { opacity: 0.9; transform: translateY(-2px); }
+        .progress-bar { height: 10px; background: #2a2a4a; border-radius: 5px; margin: 15px 0; overflow: hidden; }
+        .progress-fill { height: 100%; background: linear-gradient(90deg, #00d4ff, #00ff88); width: 0%; transition: width 0.5s; }
+        .drug-grid { display: grid; grid-template-columns: repeat(auto-fill, minmax(300px, 1fr)); gap: 15px; margin-top: 20px; }
+        .drug-card { background: linear-gradient(135deg, #1a1a3e, #0f0f23); border-radius: 10px; padding: 15px; cursor: pointer; border: 1px solid #2a2a4a; transition: all 0.3s; }
+        .drug-card:hover { border-color: #00d4ff; transform: translateY(-3px); }
+        .drug-name { font-size: 18px; font-weight: bold; margin-bottom: 8px; color: #00d4ff; }
+        .novelty-badge { display: inline-block; padding: 4px 12px; border-radius: 20px; font-size: 11px; font-weight: bold; background: #00ff8844; color: #00ff88; }
+        .modal { display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; background: rgba(0,0,0,0.8); z-index: 1000; align-items: center; justify-content: center; }
+        .modal-content { background: #1a1a3e; max-width: 700px; width: 90%; max-height: 80vh; padding: 25px; border-radius: 15px; overflow-y: auto; }
+        .close { float: right; font-size: 28px; cursor: pointer; color: #00d4ff; }
+        .loading { text-align: center; padding: 40px; }
+        .spinner { width: 50px; height: 50px; border: 3px solid #2a2a4a; border-top-color: #00d4ff; border-radius: 50%; animation: spin 1s linear infinite; margin: 0 auto 20px; }
+        @keyframes spin { to { transform: rotate(360deg); } }
+        .stat-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 15px; margin: 15px 0; }
+        .stat-card { background: #2a2a4a; padding: 15px; border-radius: 10px; text-align: center; }
+        .stat-number { font-size: 28px; font-weight: bold; color: #00d4ff; }
+        a { color: #00d4ff; text-decoration: none; }
+        h2, h3 { margin-bottom: 15px; }
+    </style>
+</head>
+<body>
+<div class="container">
+    <div class="card">
+        <h2>🐕 DrugHound Enterprise</h2>
+        <p>AI-Powered Drug Repurposing Discovery - Live Data from ClinicalTrials.gov and PubMed</p>
+        
+        <div class="search-box">
+            <input type="text" id="condition" class="search-input" placeholder="Enter disease (cancer, alzheimers, diabetes, etc.)" value="cancer">
+            <button class="btn" onclick="startResearch()">🔬 Start Research</button>
+        </div>
+        
+        <div id="progressArea" style="display:none; margin-top: 20px;">
+            <div class="progress-bar"><div class="progress-fill" id="progressFill"></div></div>
+            <p id="progressMsg"></p>
+        </div>
+    </div>
+    
+    <div id="resultsArea" style="display:none;">
+        <div class="card">
+            <h3>📊 Research Results</h3>
+            <div id="resultsSummary"></div>
+            <div id="drugResults" class="drug-grid"></div>
+        </div>
+    </div>
+    
+    <div class="card">
+        <h3>🔥 Ready to Research</h3>
+        <p>Enter a disease above to discover novel drug repurposing candidates from live clinical trial data.</p>
+    </div>
+</div>
+
+<div id="drugModal" class="modal">
+    <div class="modal-content">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <div id="modalContent"></div>
+    </div>
+</div>
+
+<div id="loadingModal" class="modal" style="display:none;">
+    <div class="loading">
+        <div class="spinner"></div>
+        <p>Loading drug data...</p>
+    </div>
+</div>
+
+<script>
+let currentJobId = null;
+let pollInterval = null;
+
+function getLevelClass(level) {
+    if (level === 'VERY HIGH') return 'novelty-badge';
+    return 'novelty-badge';
+}
+
+function displayDrugCards(drugs, containerId) {
+    const container = document.getElementById(containerId);
+    if (!container) return;
+    if (!drugs || drugs.length === 0) {
+        container.innerHTML = '<p>No drugs found. Try a different condition.</p>';
+        return;
+    }
+    
+    container.innerHTML = drugs.map(drug => `
+        <div class="drug-card" onclick="showDrugDetails('${drug.drug}')">
+            <div class="drug-name">🔬 ${drug.drug}</div>
+            <span class="novelty-badge">Score: ${drug.score}</span>
+            <div style="margin-top: 8px;">📊 ${drug.phase || 'Unknown'}</div>
+            <div>🎯 ${drug.condition || 'Multiple'}</div>
+            <div>📚 ${drug.publications || 0} publications</div>
+            <div>🔬 ${drug.trials_found || 0} clinical trials</div>
+        </div>
+    `).join('');
+}
+
+async function startResearch() {
+    const condition = document.getElementById('condition').value;
+    if (!condition) {
+        alert('Please enter a condition');
+        return;
+    }
+    
+    document.getElementById('progressArea').style.display = 'block';
+    document.getElementById('resultsArea').style.display = 'none';
+    document.getElementById('progressFill').style.width = '0%';
+    document.getElementById('progressMsg').innerHTML = 'Starting research...';
+    
+    try {
+        const response = await fetch('/api/research/start', {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json' },
+            body: JSON.stringify({ condition: condition })
+        });
+        const data = await response.json();
+        currentJobId = data.job_id;
+        startPolling();
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Failed to start research');
+    }
+}
+
+function startPolling() {
+    if (pollInterval) clearInterval(pollInterval);
+    pollInterval = setInterval(async () => {
+        if (!currentJobId) return;
+        try {
+            const response = await fetch(`/api/research/status/${currentJobId}`);
+            const status = await response.json();
+            document.getElementById('progressFill').style.width = `${status.progress}%`;
+            document.getElementById('progressMsg').innerHTML = status.message || `Progress: ${status.progress}%`;
+            
+            if (status.status === 'complete') {
+                clearInterval(pollInterval);
+                loadResults();
+            } else if (status.status === 'error') {
+                clearInterval(pollInterval);
+                document.getElementById('progressMsg').innerHTML = 'Error: ' + (status.message || 'Unknown error');
+            }
+        } catch (error) {
+            console.error('Poll error:', error);
+        }
+    }, 2000);
+}
+
+async function loadResults() {
+    try {
+        const response = await fetch(`/api/research/results/${currentJobId}`);
+        const results = await response.json();
+        
+        document.getElementById('resultsSummary').innerHTML = `
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-number">${results.unique_drugs || 0}</div><div>Drugs Found</div></div>
+                <div class="stat-card"><div class="stat-number">${results.total_trials || 0}</div><div>Trials Analyzed</div></div>
+                <div class="stat-card"><div class="stat-number">${results.condition || 'N/A'}</div><div>Condition</div></div>
+            </div>
+        `;
+        
+        if (results.drugs_analyzed && results.drugs_analyzed.length > 0) {
+            displayDrugCards(results.drugs_analyzed, 'drugResults');
+        }
+        
+        document.getElementById('resultsArea').style.display = 'block';
+    } catch (error) {
+        console.error('Load error:', error);
+    }
+}
+
+async function showDrugDetails(drugName) {
+    document.getElementById('loadingModal').style.display = 'flex';
+    
+    try {
+        const response = await fetch(`/api/drugs/${encodeURIComponent(drugName)}/analysis`);
+        const data = await response.json();
+        
+        const modalHtml = `
+            <h2>🔬 ${data.drug}</h2>
+            <div class="stat-grid">
+                <div class="stat-card"><div class="stat-number">${data.novelty?.total || 'N/A'}</div><div>Novelty Score</div></div>
+                <div class="stat-card"><div class="stat-number">${data.statistics?.total_publications || 0}</div><div>Publications</div></div>
+                <div class="stat-card"><div class="stat-number">${data.statistics?.total_trials || 0}</div><div>Trials</div></div>
+            </div>
+            <h3>📚 Publications</h3>
+            ${(data.publications || []).map(p => `<p><a href="${p.url}" target="_blank">${p.title}</a><br><small>${p.journal} (${p.year}) - PMID: ${p.pmid}</small></p>`).join('') || '<p>No publications found</p>'}
+            <h3>📊 Clinical Trials</h3>
+            ${(data.trials || []).map(t => `<p><a href="https://clinicaltrials.gov/ct2/show/${t.nct_id}" target="_blank">${t.nct_id}</a>: ${t.title}</p>`).join('') || '<p>No trials found</p>'}
+        `;
+        
+        document.getElementById('modalContent').innerHTML = modalHtml;
+        document.getElementById('drugModal').style.display = 'flex';
+    } catch (error) {
+        console.error('Error:', error);
+        alert('Error loading drug details');
+    } finally {
+        document.getElementById('loadingModal').style.display = 'none';
+    }
+}
+
+function closeModal() {
+    document.getElementById('drugModal').style.display = 'none';
+}
+</script>
+</body>
+</html>

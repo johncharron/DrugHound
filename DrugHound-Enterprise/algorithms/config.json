@@ -1,0 +1,40 @@
+{
+  "publication_weights": {
+    "exceptional": 1,
+    "very_high": 0.95,
+    "high": 0.8,
+    "moderate": 0.6,
+    "low": 0.4,
+    "very_low": 0.25
+  },
+  "publication_thresholds": {
+    "exceptional": 0,
+    "very_high": 5,
+    "high": 20,
+    "moderate": 50,
+    "low": 100,
+    "very_low": 500
+  },
+  "phase_weights": {
+    "Phase 1": 1,
+    "Early Phase 1": 1,
+    "Phase 1/2": 0.85,
+    "Phase 2": 0.6,
+    "Phase 2/3": 0.4,
+    "Phase 3": 0.2,
+    "Phase 4": 0,
+    "Unknown": 0.3
+  },
+  "component_weights": {
+    "publication": 0.5,
+    "phase": 0.3,
+    "rarity": 0.2
+  },
+  "rarity_bonuses": {
+    "rare_disease": 20,
+    "genetic_disorder": 15,
+    "orphan_drug": 10,
+    "cancer": 5,
+    "common": 0
+  }
+}

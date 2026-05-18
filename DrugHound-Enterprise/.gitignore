@@ -1,0 +1,37 @@
+# Python
+__pycache__/
+*.py[cod]
+*.so
+.Python
+env/
+venv/
+.venv
+*.db
+*.sqlite
+
+# Data and logs
+data/
+logs/
+temp/
+*.log
+drughound.db
+
+# IDE
+.vscode/
+.idea/
+*.swp
+
+# Old versions (keep only production)
+app_v*.py
+app_enhanced*.py
+app_fixed*.py
+app_complete.py
+backend_*.py
+run_*.py
+launch_enterprise.sh
+
+# Secrets
+.env
+.env.local
+*.key
+*.pem

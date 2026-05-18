@@ -1,0 +1,132 @@
+<!DOCTYPE html>
+<html>
+<head>
+    <title>DrugHound Enterprise</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body { font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif; background: linear-gradient(135deg, #667eea 0%, #764ba2 100%); min-height: 100vh; }
+        .container { max-width: 1200px; margin: 0 auto; padding: 20px; }
+        .header { text-align: center; padding: 40px 0; color: white; }
+        .header h1 { font-size: 48px; margin-bottom: 10px; }
+        .card { background: white; border-radius: 10px; padding: 30px; margin-bottom: 30px; box-shadow: 0 4px 6px rgba(0,0,0,0.1); }
+        .search-box { display: flex; gap: 10px; margin-bottom: 20px; }
+        .search-box input { flex: 1; padding: 15px; border: 2px solid #e0e0e0; border-radius: 5px; font-size: 16px; }
+        .search-box button { padding: 15px 30px; background: #667eea; color: white; border: none; border-radius: 5px; cursor: pointer; font-size: 16px; }
+        .search-box button:hover { background: #5a67d8; }
+        .results-table { width: 100%; border-collapse: collapse; margin-top: 20px; }
+        .results-table th, .results-table td { padding: 12px; text-align: left; border-bottom: 1px solid #e0e0e0; }
+        .results-table th { background: #f8f9fa; font-weight: 600; }
+        .high-score { color: #28a745; font-weight: bold; }
+        .medium-score { color: #ffc107; font-weight: bold; }
+        .low-score { color: #dc3545; font-weight: bold; }
+        .btn { display: inline-block; padding: 10px 20px; margin: 10px; background: #667eea; color: white; text-decoration: none; border-radius: 5px; }
+        .btn:hover { background: #5a67d8; }
+        .loading { text-align: center; padding: 20px; display: none; }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🐕 DrugHound Enterprise</h1>
+            <p>AI-Powered Drug Repurposing Discovery Platform</p>
+        </div>
+        
+        <div class="card">
+            <h2>🔍 Search Drugs</h2>
+            <div class="search-box">
+                <input type="text" id="searchQuery" placeholder="Enter drug name, condition, or mechanism...">
+                <button onclick="searchDrugs()">Search</button>
+            </div>
+            <div id="results"></div>
+            <div class="loading" id="loading">Searching...</div>
+        </div>
+        
+        <div class="card">
+            <h2>📊 Reports</h2>
+            <div style="display: flex; gap: 10px; flex-wrap: wrap;">
+                <button class="btn" onclick="generateReport('html')">📄 HTML Report</button>
+                <button class="btn" onclick="generateReport('pdf')">📑 PDF Report</button>
+                <button class="btn" onclick="generateReport('excel')">📊 Excel Report</button>
+                <button class="btn" onclick="generateReport('json')">📋 JSON Export</button>
+            </div>
+            <div id="reportStatus" style="margin-top: 20px;"></div>
+        </div>
+        
+        <div class="card">
+            <h2>🏆 Top Novel Drug Candidates</h2>
+            <div id="topDrugs"></div>
+        </div>
+    </div>
+    
+    <script>
+        async function searchDrugs() {
+            const query = document.getElementById('searchQuery').value;
+            if (!query) return;
+            
+            document.getElementById('loading').style.display = 'block';
+            document.getElementById('results').innerHTML = '';
+            
+            try {
+                const response = await fetch('/api/search', {
+                    method: 'POST',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ query: query, search_type: 'text' })
+                });
+                const data = await response.json();
+                displayResults(data.results);
+            } catch (error) {
+                console.error('Search failed:', error);
+            } finally {
+                document.getElementById('loading').style.display = 'none';
+            }
+        }
+        
+        function displayResults(results) {
+            const container = document.getElementById('results');
+            if (!results.length) {
+                container.innerHTML = '<p>No results found.</p>';
+                return;
+            }
+            
+            let html = '<table class="results-table"> <tr><th>Drug</th><th>Novelty Score</th><th>Phase</th><th>Condition</th></tr>';
+            results.forEach(drug => {
+                let scoreClass = drug.novelty_score >= 80 ? 'high-score' : (drug.novelty_score >= 60 ? 'medium-score' : 'low-score');
+                html += `<tr>
+                    <td><strong>${drug.drug_name || drug.drug}</strong></td>
+                    <td class="${scoreClass}">${drug.novelty_score || drug.score}</td>
+                    <td>${drug.phase || 'Unknown'}</td>
+                    <td>${drug.condition || 'Multiple'}</td>
+                </tr>`;
+            });
+            html += '</table>';
+            container.innerHTML = html;
+        }
+        
+        async function generateReport(format) {
+            const statusDiv = document.getElementById('reportStatus');
+            statusDiv.innerHTML = 'Generating report...';
+            
+            try {
+                const response = await fetch(`/api/report/generate?format=${format}`, { method: 'POST' });
+                if (response.ok) {
+                    window.open(response.url, '_blank');
+                    statusDiv.innerHTML = '✅ Report generated successfully!';
+                } else {
+                    statusDiv.innerHTML = '❌ Failed to generate report.';
+                }
+            } catch (error) {
+                statusDiv.innerHTML = '❌ Error generating report.';
+            }
+            
+            setTimeout(() => { statusDiv.innerHTML = ''; }, 3000);
+        }
+        
+        // Load top drugs on page load
+        window.onload = async () => {
+            const response = await fetch('/api/drugs?limit=10&min_score=70');
+            const data = await response.json();
+            displayResults(data.drugs);
+        };
+    </script>
+</body>
+</html>
